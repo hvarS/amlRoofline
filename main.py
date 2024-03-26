@@ -282,8 +282,6 @@ def main_worker(gpu, ngpus_per_node, args):
             train_sampler.set_epoch(epoch)
 
         ## TODO: Before Training, Find the Summary of the Size and Parameters of the Model
-        
-        model.to(device)
         summary(model,(3,28,28))
         
 
@@ -326,16 +324,30 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
     model.train()
 
     end = time.time()
+
+    ## TODO: Start Profiler    
+    torch.cuda.cudart().cudaProfilerStart()
+
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
+
+        
+        
+        ## TODO: Push Range for current Iteration
+        torch.cuda.nvtx.range_push("iteration{}".format(i))
 
         # move data to the same device as model
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
 
+        ## TODO: Push Range for Forward Pass
+        torch.cuda.nvtx.range_push("forward")
         # compute output
         output = model(images)
+        ## TODO: Pop range after forward pass
+        torch.cuda.nvtx.range_pop()
+
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -346,8 +358,17 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
+
+        ## TODO: Push Range for backward pass
+        torch.cuda.nvtx.range_push("backward")
         loss.backward()
+        ## TODO: Pop Range after the backward pass is done
+        torch.cuda.nvtx.range_pop()
+
+        ## TODO: Push Range for Optimizer Step
+        torch.cuda.nvtx.range_push("opt.step()")
         optimizer.step()
+        torch.cuda.nvtx.range_pop()
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -355,7 +376,11 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
 
         if i % args.print_freq == 0:
             progress.display(i + 1)
+        ## TODO: Pop Range for Iteration completion
+        torch.cuda.nvtx.range_pop()
 
+    ## TODO: Stop profiler
+    torch.cuda.cudart().cudaProfilerStop()
 
 def validate(val_loader, model, criterion, args):
 
