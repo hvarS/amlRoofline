@@ -277,12 +277,14 @@ def main_worker(gpu, ngpus_per_node, args):
         validate(val_loader, model, criterion, args)
         return
 
+    ## TODO: Before Training, Find the Summary of the Size and Parameters of the Model
+    summary(model,(3,28,28))
+
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
 
-        ## TODO: Before Training, Find the Summary of the Size and Parameters of the Model
-        summary(model,(3,28,28))
+        
         
 
         # train for one epoch
