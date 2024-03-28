@@ -24,9 +24,9 @@ from torch.utils.data import Subset
 ## Imports for Performance
 import torch.cuda.profiler as profiler
 from torchsummary import summary
-import nvidia_dlprof_pytorch_nvtx
+import nvidia_dlprof_pytorch_nvtx as nvtx
 
-nvidia_dlprof_pytorch_nvtx.init()
+nvtx.init(enable_function_stack = True)
 torch.backends.cudnn.benchmark = True
 
 model_names = sorted(name for name in models.__dict__
@@ -219,7 +219,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
         target = target.to(device, non_blocking=True)
 
         ## TODO: profiler start stop tags
-        profiler.start()
+        if i>=3:
+            profiler.start()
         # compute output
         output = model(images)
         
@@ -238,7 +239,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
         
         optimizer.step()
         ## TODO: Ending profiler stop point
-        profiler.stop()
+        if i>=3:
+            profiler.stop()
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
