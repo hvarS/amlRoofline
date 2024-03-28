@@ -224,7 +224,7 @@ def main():
 
 
     # Randomly select indices for the sample
-    sample_size = 1000
+    sample_size = 320
     sample_indices = random.sample(range(len(dataset1)), sample_size)
     sample_indices_val = random.sample(range(len(dataset2)), sample_size//10)
 
