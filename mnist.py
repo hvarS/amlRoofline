@@ -242,6 +242,7 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     model = models.__dict__[args.arch]()
+    model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
