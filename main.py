@@ -24,6 +24,9 @@ from torch.utils.data import Subset
 ## Imports for Performance
 import torch.cuda.profiler as profiler
 from torchsummary import summary
+import nvidia_dlprof_pytorch_nvtx
+
+nvidia_dlprof_pytorch_nvtx.init()
 
 
 model_names = sorted(name for name in models.__dict__
