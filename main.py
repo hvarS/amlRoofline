@@ -232,8 +232,6 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
 
         # compute gradient and do SGD step
         optimizer.zero_grad()
-
-        
         loss.backward()
        
         
