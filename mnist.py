@@ -193,6 +193,7 @@ def main():
     if use_cuda:
         print("Use GPU: 0 for training")
 
+    print("=> creating model '{}'".format(args.arch))
 
     train_kwargs = {'batch_size': args.batch_size}
     test_kwargs = {'batch_size': args.test_batch_size}
