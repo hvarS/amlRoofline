@@ -27,7 +27,7 @@ from torchsummary import summary
 import nvidia_dlprof_pytorch_nvtx
 
 nvidia_dlprof_pytorch_nvtx.init()
-
+torch.backends.cudnn.benchmark = True
 
 model_names = sorted(name for name in models.__dict__
     if name.islower() and not name.startswith("__")
