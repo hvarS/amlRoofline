@@ -12,8 +12,8 @@ from enum import Enum
 from models import RNetModel, CNNModel
 #DLProf
 import torch.cuda.profiler as profiler
-import nvidia_dlprof_pytorch_nvtx
-nvidia_dlprof_pytorch_nvtx.init()
+# import nvidia_dlprof_pytorch_nvtx
+# nvidia_dlprof_pytorch_nvtx.init()
 
 
 class Summary(Enum):
