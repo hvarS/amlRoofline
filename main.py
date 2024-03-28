@@ -23,7 +23,6 @@ from torch.utils.data import Subset
 
 ## Imports for Performance
 import torch.cuda.profiler as profiler
-import pyprof
 from torchsummary import summary
 
 
@@ -39,11 +38,11 @@ parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
                     help='model architecture: ' +
                         ' | '.join(model_names) +
                         ' (default: resnet18)')
-parser.add_argument('--epochs', default=90, type=int, metavar='N',
+parser.add_argument('--epochs', default=5, type=int, metavar='N',
                     help='number of total epochs to run')
 parser.add_argument('--start-epoch', default=0, type=int, metavar='N',
                     help='manual epoch number (useful on restarts)')
-parser.add_argument('-b', '--batch-size', default=256, type=int,
+parser.add_argument('-b', '--batch-size', default=64, type=int,
                     metavar='N',
                     help='mini-batch size (default: 256), this is the total '
                          'batch size of all GPUs on the current node when '
@@ -55,19 +54,14 @@ parser.add_argument('--momentum', default=0.9, type=float, metavar='M',
 parser.add_argument('--wd', '--weight-decay', default=1e-4, type=float,
                     metavar='W', help='weight decay (default: 1e-4)',
                     dest='weight_decay')
-parser.add_argument('-p', '--print-freq', default=10, type=int,
+parser.add_argument('-p', '--print-freq', default=1, type=int,
                     metavar='N', help='print frequency (default: 10)')
-parser.add_argument('--resume', default='', type=str, metavar='PATH',
-                    help='path to latest checkpoint (default: none)')
 parser.add_argument('-e', '--evaluate', dest='evaluate', action='store_true',
                     help='evaluate model on validation set')
-parser.add_argument('--pretrained', dest='pretrained', action='store_true',
-                    help='use pre-trained model')
 parser.add_argument('--seed', default=None, type=int,
                     help='seed for initializing training. ')
 parser.add_argument('--gpu', default=None, type=int,
                     help='GPU id to use.')
-parser.add_argument('--dummy', action='store_true', help="use fake data to benchmark")
 
 best_acc1 = 0
 
@@ -98,8 +92,6 @@ def main():
 
 def main_worker(gpu, ngpus_per_node, args):
 
-    pyprof.init()
-
     global best_acc1
     args.gpu = gpu
 
@@ -107,12 +99,8 @@ def main_worker(gpu, ngpus_per_node, args):
         print("Use GPU: {} for training".format(args.gpu))
 
     # create model
-    if args.pretrained:
-        print("=> using pre-trained model '{}'".format(args.arch))
-        model = models.__dict__[args.arch](pretrained=True)
-    else:
-        print("=> creating model '{}'".format(args.arch))
-        model = models.__dict__[args.arch]()
+    print("=> creating model '{}'".format(args.arch))
+    model = models.__dict__[args.arch]()
 
     if not torch.cuda.is_available():
         print('using CPU, this will be slow')
@@ -134,6 +122,8 @@ def main_worker(gpu, ngpus_per_node, args):
             device = torch.device("cuda")
     else:
         device = torch.device("cpu")
+
+
     # define loss function (criterion), optimizer, and learning rate scheduler
     criterion = nn.CrossEntropyLoss().to(device)
 
@@ -143,37 +133,30 @@ def main_worker(gpu, ngpus_per_node, args):
     
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
     scheduler = StepLR(optimizer, step_size=30, gamma=0.1)
-    
 
+    # Dataset Loading
+    traindir = os.path.join(args.data, 'train')
+    valdir = os.path.join(args.data, 'val')
+    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                    std=[0.229, 0.224, 0.225])
 
-    # Data loading code
-    if args.dummy:
-        print("=> Dummy data is used!")
-        train_dataset = datasets.FakeData(1281167, (3, 224, 224), 1000, transforms.ToTensor())
-        val_dataset = datasets.FakeData(50000, (3, 224, 224), 1000, transforms.ToTensor())
-    else:
-        traindir = os.path.join(args.data, 'train')
-        valdir = os.path.join(args.data, 'val')
-        normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
+    train_dataset = datasets.ImageFolder(
+        traindir,
+        transforms.Compose([
+            transforms.RandomResizedCrop(224),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ]))
 
-        train_dataset = datasets.ImageFolder(
-            traindir,
-            transforms.Compose([
-                transforms.RandomResizedCrop(224),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normalize,
-            ]))
-
-        val_dataset = datasets.ImageFolder(
-            valdir,
-            transforms.Compose([
-                transforms.Resize(256),
-                transforms.CenterCrop(224),
-                transforms.ToTensor(),
-                normalize,
-            ]))
+    val_dataset = datasets.ImageFolder(
+        valdir,
+        transforms.Compose([
+            transforms.Resize(256),
+            transforms.CenterCrop(224),
+            transforms.ToTensor(),
+            normalize,
+        ]))
 
     train_sampler = None
     val_sampler = None
@@ -204,16 +187,6 @@ def main_worker(gpu, ngpus_per_node, args):
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
 
-        
-        save_checkpoint({
-            'epoch': epoch + 1,
-            'arch': args.arch,
-            'state_dict': model.state_dict(),
-            'best_acc1': best_acc1,
-            'optimizer' : optimizer.state_dict(),
-            'scheduler' : scheduler.state_dict()
-        }, is_best)
-
 
 def train(train_loader, model, criterion, optimizer, epoch, device, args):
     batch_time = AverageMeter('Time', ':6.3f')
@@ -231,29 +204,19 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
 
     end = time.time()
 
-    ## TODO: Start Profiler    
-    torch.cuda.cudart().cudaProfilerStart()
-
     for i, (images, target) in enumerate(train_loader):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        
-        
-        ## TODO: Push Range for current Iteration
-        torch.cuda.nvtx.range_push("iteration{}".format(i))
 
         # move data to the same device as model
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
 
-        ## TODO: Push Range for Forward Pass
-        torch.cuda.nvtx.range_push("forward")
+       
         # compute output
         output = model(images)
-        ## TODO: Pop range after forward pass
-        torch.cuda.nvtx.range_pop()
-
+        
         loss = criterion(output, target)
 
         # measure accuracy and record loss
@@ -265,28 +228,19 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
         # compute gradient and do SGD step
         optimizer.zero_grad()
 
-        ## TODO: Push Range for backward pass
-        torch.cuda.nvtx.range_push("backward")
+        
         loss.backward()
-        ## TODO: Pop Range after the backward pass is done
-        torch.cuda.nvtx.range_pop()
-
-        ## TODO: Push Range for Optimizer Step
-        torch.cuda.nvtx.range_push("opt.step()")
+       
+        
         optimizer.step()
-        torch.cuda.nvtx.range_pop()
-
+        
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
 
         if i % args.print_freq == 0:
             progress.display(i + 1)
-        ## TODO: Pop Range for Iteration completion
-        torch.cuda.nvtx.range_pop()
-
-    ## TODO: Stop profiler
-    torch.cuda.cudart().cudaProfilerStop()
+        
 
 def validate(val_loader, model, criterion, args):
 
@@ -336,10 +290,6 @@ def validate(val_loader, model, criterion, args):
     return top1.avg
 
 
-def save_checkpoint(state, is_best, filename='checkpoint.pth.tar'):
-    torch.save(state, filename)
-    if is_best:
-        shutil.copyfile(filename, 'model_best.pth.tar')
 
 class Summary(Enum):
     NONE = 0
