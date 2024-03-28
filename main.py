@@ -218,7 +218,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
         images = images.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
 
-       
+        ## TODO: profiler start stop tags
+        profiler.start()
         # compute output
         output = model(images)
         
@@ -236,7 +237,8 @@ def train(train_loader, model, criterion, optimizer, epoch, device, args):
        
         
         optimizer.step()
-        
+        ## TODO: Ending profiler stop point
+        profiler.stop()
         # measure elapsed time
         batch_time.update(time.time() - end)
         end = time.time()
