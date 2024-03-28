@@ -99,7 +99,7 @@ def main():
 def main_worker(gpu, ngpus_per_node, args):
 
     pyprof.init()
-    
+
     global best_acc1
     args.gpu = gpu
 
@@ -322,7 +322,7 @@ def validate(val_loader, model, criterion, args):
     top1 = AverageMeter('Acc@1', ':6.2f', Summary.AVERAGE)
     top5 = AverageMeter('Acc@5', ':6.2f', Summary.AVERAGE)
     progress = ProgressMeter(
-        len(val_loader) + (args.distributed and (len(val_loader.sampler) * args.world_size < len(val_loader.dataset))),
+        len(val_loader) + ((len(val_loader.sampler) * 1 < len(val_loader.dataset))),
         [batch_time, losses, top1, top5],
         prefix='Test: ')
 
