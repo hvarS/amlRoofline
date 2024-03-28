@@ -179,12 +179,14 @@ def main_worker(gpu, ngpus_per_node, args):
 
     for epoch in range(args.start_epoch, args.epochs):
         # train for one epoch
-        train(train_loader, model, criterion, optimizer, epoch, device, args)
+        with torch.autograd.profiler.emit_nvtx():
+            
+            train(train_loader, model, criterion, optimizer, epoch, device, args)
 
-        # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
-        
-        scheduler.step()
+            # evaluate on validation set
+            acc1 = validate(val_loader, model, criterion, args)
+            
+            scheduler.step()
         
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
