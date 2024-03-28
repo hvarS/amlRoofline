@@ -9,7 +9,7 @@ from torch.optim.lr_scheduler import StepLR
 import random
 import os
 from enum import Enum
-from models import RNetModel, CNNModel
+from models import RNetModel, CNNModel, MNetModel
 #DLProf
 import torch.cuda.profiler as profiler
 # import nvidia_dlprof_pytorch_nvtx
@@ -115,14 +115,14 @@ def train(args, model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
 
-        if batch_idx ==3:
+        if batch_idx ==3 and epoch == 3:
             profiler.start()
         optimizer.zero_grad()
         output = model(data)
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
-        if batch_idx ==3:
+        if batch_idx ==3 and epoch == 3:
             profiler.stop()
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), data.size(0))
