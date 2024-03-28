@@ -11,6 +11,7 @@ import os
 from enum import Enum
 
 #DLProf
+import torch.cuda.profiler as profiler
 import nvidia_dlprof_pytorch_nvtx
 nvidia_dlprof_pytorch_nvtx.init()
 
@@ -117,12 +118,14 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
+
+        profiler.start()
         optimizer.zero_grad()
         output = model(data)
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
-        
+        profiler.stop()
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), data.size(0))
         top1.update(acc1[0], data.size(0))
