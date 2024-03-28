@@ -4,20 +4,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from torchvision import datasets, transforms, models
+from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
 import random
 import os
 from enum import Enum
-
+from models import RNetModel, CNNModel
 #DLProf
 import torch.cuda.profiler as profiler
 import nvidia_dlprof_pytorch_nvtx
 nvidia_dlprof_pytorch_nvtx.init()
-
-model_names = sorted(name for name in models.__dict__
-    if name.islower() and not name.startswith("__")
-    and callable(models.__dict__[name]))
 
 
 class Summary(Enum):
@@ -119,14 +115,14 @@ def train(args, model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
 
-        if batch_idx >=3:
+        if batch_idx ==3:
             profiler.start()
         optimizer.zero_grad()
         output = model(data)
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
-        if batch_idx >=3:
+        if batch_idx ==3:
             profiler.stop()
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), data.size(0))
@@ -166,11 +162,6 @@ def test(model, device, test_loader):
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
-    parser.add_argument('-a', '--arch', metavar='ARCH', default='resnet18',
-                    choices=model_names,
-                    help='model architecture: ' +
-                        ' | '.join(model_names) +
-                        ' (default: resnet18)')
     parser.add_argument('data', metavar='DIR', nargs='?', default='imagenet',
                     help='path to dataset (default: imagenet)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -245,7 +236,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = models.__dict__[args.arch]()
+    model = CNNModel()
     model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
