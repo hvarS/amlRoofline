@@ -6,6 +6,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.optim.lr_scheduler import StepLR
+import random
 
 #DLProf
 import nvidia_dlprof_pytorch_nvtx
@@ -120,8 +121,19 @@ def main():
                        transform=transform)
     dataset2 = datasets.MNIST('../data', train=False,
                        transform=transform)
-    train_loader = torch.utils.data.DataLoader(dataset1[:1000],**train_kwargs)
-    test_loader = torch.utils.data.DataLoader(dataset2[:200], **test_kwargs)
+    
+    
+
+    # Randomly select indices for the sample
+    sample_size = 1000
+    sample_indices = random.sample(range(len(dataset1)), sample_size)
+    sample_indices_val = random.sample(range(len(dataset2)), sample_size//10)
+
+    # Create a Subset of the MNIST dataset using the sampled indices
+    dataset1 = torch.utils.data.Subset(dataset1, sample_indices)
+    dataset2 = torch.utils.data.Subset(dataset2, sample_indices_val)
+    train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
+    test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     model = Net().to(device)
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
