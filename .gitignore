@@ -1,1 +1,4 @@
 imagenet/imagenette*
+imagenet/train/*
+imagenet/val/*
+imagenet/noisy_imagenette.csv
