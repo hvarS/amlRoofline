@@ -142,7 +142,6 @@ def train(args, model, device, train_loader, optimizer, epoch):
             with_flops=True, 
             with_modules=True,
         ) as p:
-            p.start()
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
