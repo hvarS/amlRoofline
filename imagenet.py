@@ -239,7 +239,7 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     model = MNetModel()
-    flops = FlopCountAnalysis(model, torch.random.randn(16,3,224,224))
+    flops = FlopCountAnalysis(model, torch.randn(16,3,224,224))
     print(flop_count_table(flops))
     print(summary(model,(3,224,224)))
 
