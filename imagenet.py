@@ -13,6 +13,7 @@ from models import RNetModel, CNNModel, MNetModel
 
 ## Model Complexity
 from fvcore.nn.flop_count import FlopCountAnalysis
+from fvcore.nn import flop_count_table
 from fvcore.nn.activation_count import ActivationCountAnalysis
 from torchsummary import summary
 #DLProf
@@ -249,8 +250,13 @@ def main():
     flops_breakdown = flop_analysis.by_module()
     for module_name, flops in flops_breakdown.items():
         print(f"{module_name}: {flops:.2f} FLOPS")
-        
-    print(summary(model,(3,224,224)))
+
+    total_activations = activation_analysis.total()
+    print(f"Total Activations: {total_activations:.2f}")
+    # Assuming you have a PyTorch model 'model' and an input tensor 'input_tensor'
+    flops_table = flop_count_table(model, torch.randn(1, 3, 224, 224))
+    print(flops_table)
+    print(summary(model, torch.randn(1, 3, 224, 224)))
 
     model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
