@@ -244,19 +244,12 @@ def main():
     
 
     # Create the FlopCountAnalysis and ActivationCountAnalysis objects
-    flop_analysis = FlopCountAnalysis(model, torch.randn(1, 3, 224, 224))
-    activation_analysis = ActivationCountAnalysis(model, torch.randn(1, 3, 224, 224))
-
-    flops_breakdown = flop_analysis.by_module()
-    for module_name, flops in flops_breakdown.items():
-        print(f"{module_name}: {flops:.2f} FLOPS")
-
+    sample = torch.randn(1, 3, 224, 224)
+    print(flop_count_table(FlopCountAnalysis(model, sample)))
+    print(summary(model, sample))
+    activation_analysis = ActivationCountAnalysis(model, sample)
     total_activations = activation_analysis.total()
     print(f"Total Activations: {total_activations:.2f}")
-    # Assuming you have a PyTorch model 'model' and an input tensor 'input_tensor'
-    flops_table = flop_count_table(model, torch.randn(1, 3, 224, 224))
-    print(flops_table)
-    print(summary(model, torch.randn(1, 3, 224, 224)))
 
     model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
