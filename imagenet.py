@@ -249,6 +249,7 @@ def main():
     summary(model, (3,224,224), device='cpu')
 
     activation_analysis = ActivationCountAnalysis(model, sample)
+    print(activation_analysis)
     total_activations = activation_analysis.total()
     print(f"Total Activations: {total_activations:.2f}")
 
