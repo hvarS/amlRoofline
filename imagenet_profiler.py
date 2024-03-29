@@ -149,8 +149,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
             loss.backward()
             optimizer.step()
             losses.update(loss.item(), data.size(0))
-            print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
             p.step()
+            print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
+
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         top1.update(acc1[0], data.size(0))
