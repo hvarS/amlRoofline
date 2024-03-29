@@ -3,29 +3,36 @@ import torch.nn as nn
 class CNNModel(nn.Module):
     def __init__(self, num_classes=10):
         super(CNNModel, self).__init__()
-        self.features = nn.Sequential(
-            nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False),
-            nn.BatchNorm2d(64),
-            nn.ReLU(inplace=True),
-            nn.MaxPool2d(kernel_size=3, stride=2, padding=1),
-            nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(128),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(256),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1, bias=False),
-            nn.BatchNorm2d(512),
-            nn.ReLU(inplace=True),
-        )
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.bn1 = nn.BatchNorm2d(64)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.max_pool1 = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+        self.conv2  = nn.Conv2d(64, 128, kernel_size=3, stride=2, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(128)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.conv3 = nn.Conv2d(128, 256, kernel_size=3, stride=2, padding=1, bias=False)
+        self.bn3 = nn.BatchNorm2d(256)
+        self.relu3 = nn.ReLU(inplace=True)
+        self.conv4 = nn.Conv2d(256, 512, kernel_size=3, stride=2, padding=1, bias=False)
+        self.bn4 =  nn.BatchNorm2d(512)
+        self.relu4 = nn.ReLU(inplace=True)
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = nn.Linear(512, num_classes)
 
-    def forward(self, x):
-        x = self.features(x)
-        x = self.avgpool(x)
+    def forward(self, x, profiler):
+
+        profiler.start()
+
+        upsample1 = self.max_pool1(self.relu1(self.bn1(self.conv1(x))))
+        upsample2 = self.relu2(self.bn2(self.conv2(upsample1)))
+        upsample3 = self.relu3(self.bn3(self.conv3(upsample2)))
+        upsample4 = self.relu4(self.bn4(self.conv4(upsample3)))
+        x = self.avgpool(upsample4)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
+
+        profiler.stop()
+        
         return x
     
 
@@ -47,6 +54,7 @@ class RNetModel(nn.Module):
 
     def _make_layer(self, in_channels, out_channels, blocks, stride=1):
         layers = []
+
         layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False))
         layers.append(nn.BatchNorm2d(out_channels))
         layers.append(nn.ReLU(inplace=True))
@@ -56,7 +64,9 @@ class RNetModel(nn.Module):
             layers.append(nn.ReLU(inplace=True))
         return nn.Sequential(*layers)
 
-    def forward(self, x):
+    def forward(self, x, profiler):
+        profiler.start()
+
         x = self.conv1(x)
         x = self.bn1(x)
         x = self.relu(x)
@@ -70,6 +80,9 @@ class RNetModel(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.fc(x)
+
+        profiler.stop()
+
         return x
     
 
@@ -99,9 +112,15 @@ class MNetModel(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-    def forward(self, x):
+    def forward(self, x, profiler):
+        
+        profiler.start()
+
         x = self.features(x)
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
+
+        profiler.stop()
+
         return x

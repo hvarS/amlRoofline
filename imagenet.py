@@ -120,10 +120,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-
-        if batch_idx ==3 and epoch == 3:
-            profiler.start()
         optimizer.zero_grad()
+        if batch_idx == 3 and epoch >= 2:
+            profiler.start()
         output = model(data)
         loss = F.cross_entropy(output, target)
         loss.backward()
