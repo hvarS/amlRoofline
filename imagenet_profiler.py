@@ -10,12 +10,21 @@ import random
 import os
 from enum import Enum
 from models import RNetModel, CNNModel, MNetModel
+
+## Model Complexity
+from fvcore.nn.flop_count import FlopCountAnalysis
+from fvcore.nn import flop_count_table
+from fvcore.nn.activation_count import ActivationCountAnalysis
+from torchsummary import summary
 #DLProf
-import torch.cuda.profiler as profiler
-import nvidia_dlprof_pytorch_nvtx
+import torch.profiler as profiler
+# import nvidia_dlprof_pytorch_nvtx
+# nvidia_dlprof_pytorch_nvtx.init()
 
-nvidia_dlprof_pytorch_nvtx.init(enable_function_stack=True)
 
+def trace_handler(prof):
+    print(prof.key_averages().table(
+        sort_by="self_cuda_time_total", row_limit=-1))
 
 class Summary(Enum):
     NONE = 0
@@ -101,7 +110,6 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-
 def train(args, model, device, train_loader, optimizer, epoch):
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -116,16 +124,35 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-        optimizer.zero_grad()
-        if batch_idx == 3 and epoch >= 2:
-            output = model.forward_with_profiler(data, profiler)
-        else:
+
+        with profiler.profile(
+            activities=[
+                torch.profiler.ProfilerActivity.CPU,
+                torch.profiler.ProfilerActivity.CUDA,
+            ],
+            schedule=torch.profiler.schedule(
+                wait=1,
+                warmup=1,
+                active=2,
+                repeat=1),
+            on_trace_ready=trace_handler,
+            record_shapes=True, 
+            profile_memory=True, 
+            with_stack=True, 
+            with_flops=True, 
+            with_modules=True,
+        ) as p:
+            p.start()
+            optimizer.zero_grad()
             output = model(data)
-        loss = F.cross_entropy(output, target)
-        loss.backward()
-        optimizer.step()
+            loss = F.cross_entropy(output, target)
+            loss.backward()
+            optimizer.step()
+            losses.update(loss.item(), data.size(0))
+            print(p.key_averages().table())
+            p.step()
+
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
-        losses.update(loss.item(), data.size(0))
         top1.update(acc1[0], data.size(0))
         top5.update(acc5[0], data.size(0))
 
@@ -137,6 +164,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
             if args.dry_run:
                 break
+        
+
+        
 
 
 
@@ -165,7 +195,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('data', metavar='DIR', nargs='?', default='imagenet',
                     help='path to dataset (default: imagenet)')
-    parser.add_argument('--batch-size', type=int, default=128, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
@@ -235,16 +265,27 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = RNetModel()
+    model = MNetModel()
+    
+
+    # Create the FlopCountAnalysis and ActivationCountAnalysis objects
+    sample = torch.randn(1, 3, 224, 224)
+    print(flop_count_table(FlopCountAnalysis(model, sample)))
+    summary(model, (3,224,224), device='cpu')
+
+    activation_analysis = ActivationCountAnalysis(model, sample)
+    print(activation_analysis)
+    total_activations = activation_analysis.total()
+    print(f"Total Activations: {total_activations:.2f}")
+
     model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        with torch.autograd.profiler.emit_nvtx(): #added this line for DLProf
-            train(args, model, device, train_loader, optimizer, epoch)
-            test(model, device, test_loader)
-            scheduler.step()
+        train(args, model, device, train_loader, optimizer, epoch)
+        test(model, device, test_loader)
+        scheduler.step()
 
 
 if __name__ == '__main__':
