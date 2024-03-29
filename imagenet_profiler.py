@@ -151,6 +151,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             p.step()
         
         print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
+        print(p.key_averages().table(sort_by="self_cpu_time_total", row_limit=-1))
 
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
