@@ -246,7 +246,7 @@ def main():
     # Create the FlopCountAnalysis and ActivationCountAnalysis objects
     sample = torch.randn(1, 3, 224, 224)
     print(flop_count_table(FlopCountAnalysis(model, sample)))
-    summary(model, (3,224,224), device='0')
+    summary(model, (3,224,224), device='cuda')
 
     activation_analysis = ActivationCountAnalysis(model, sample)
     total_activations = activation_analysis.total()
