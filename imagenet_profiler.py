@@ -122,6 +122,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
 
     model.train()
+    
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
 
@@ -142,18 +143,16 @@ def train(args, model, device, train_loader, optimizer, epoch):
         #     with_flops=True, 
         #     with_modules=True,
         # ) as p:
-        with torch.autograd.profiler.profile(enabled=True, use_cuda=False) as p:
+        with torch.autograd.profiler.profile(enabled=True, use_cuda=True) as p:
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
             loss.backward()
             optimizer.step()
-            losses.update(loss.item(), data.size(0))
-        
-        # print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
-        # print(p.key_averages().table(sort_by="self_cpu_time_total", row_limit=-1))
-        print(p)
-
+            
+            # print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
+            # print(p.key_averages().table(sort_by="self_cpu_time_total", row_limit=-1))
+        losses.update(loss.item(), data.size(0))
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         top1.update(acc1[0], data.size(0))
         top5.update(acc5[0], data.size(0))
@@ -166,6 +165,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
             if args.dry_run:
                 break
+    
+    print(p)
         
 
         
