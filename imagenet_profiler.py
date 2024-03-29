@@ -125,34 +125,34 @@ def train(args, model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
 
-        with profiler.profile(
-            activities=[
-                torch.profiler.ProfilerActivity.CPU,
-                torch.profiler.ProfilerActivity.CUDA,
-            ],
-            schedule=torch.profiler.schedule(
-                wait=1,
-                warmup=1,
-                active=2,
-                repeat=1),
-            on_trace_ready=trace_handler,
-            record_shapes=True, 
-            profile_memory=True, 
-            with_stack=True, 
-            with_flops=True, 
-            with_modules=True,
-        ) as p:
+        # with profiler.profile(
+        #     activities=[
+        #         torch.profiler.ProfilerActivity.CPU,
+        #         torch.profiler.ProfilerActivity.CUDA,
+        #     ],
+        #     schedule=torch.profiler.schedule(
+        #         wait=1,
+        #         warmup=1,
+        #         active=2,
+        #         repeat=1),
+        #     on_trace_ready=trace_handler,
+        #     record_shapes=True, 
+        #     profile_memory=True, 
+        #     with_stack=True, 
+        #     with_flops=True, 
+        #     with_modules=True,
+        # ) as p:
+        with torch.autograd.profiler.profile(enabled=True, use_cuda=False) as p:
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
             loss.backward()
             optimizer.step()
             losses.update(loss.item(), data.size(0))
-            p.step()
         
-        print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
-        print(p.key_averages().table(sort_by="self_cpu_time_total", row_limit=-1))
-
+        # print(p.key_averages().table(sort_by="self_cuda_time_total", row_limit=-1))
+        # print(p.key_averages().table(sort_by="self_cpu_time_total", row_limit=-1))
+        print(p)
 
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         top1.update(acc1[0], data.size(0))
