@@ -101,6 +101,7 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
+
 def train(args, model, device, train_loader, optimizer, epoch):
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -115,16 +116,14 @@ def train(args, model, device, train_loader, optimizer, epoch):
     model.train()
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-
-        if batch_idx ==3 and epoch == 3:
-            profiler.start()
         optimizer.zero_grad()
-        output = model(data)
+        if batch_idx == 3 and epoch >= 2:
+            output = model.forward_with_profiler(data, profiler)
+        else:
+            output = model(data)
         loss = F.cross_entropy(output, target)
         loss.backward()
         optimizer.step()
-        if batch_idx ==3 and epoch == 3:
-            profiler.stop()
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), data.size(0))
         top1.update(acc1[0], data.size(0))
@@ -138,6 +137,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
             if args.dry_run:
                 break
+
 
 
 
