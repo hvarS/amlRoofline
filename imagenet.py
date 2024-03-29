@@ -10,6 +10,10 @@ import random
 import os
 from enum import Enum
 from models import RNetModel, CNNModel, MNetModel
+
+## Model Complexity
+from fvcore.nn import FlopCountAnalysis, flop_count_table
+from torchsummary import summary
 #DLProf
 import torch.cuda.profiler as profiler
 # import nvidia_dlprof_pytorch_nvtx
@@ -235,6 +239,10 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     model = MNetModel()
+    flops = FlopCountAnalysis(model, torch.random.randn(16,3,224,224))
+    print(flop_count_table(flops))
+    print(summary(model,(3,224,224)))
+
     model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
