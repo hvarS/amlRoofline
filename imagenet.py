@@ -12,7 +12,8 @@ from enum import Enum
 from models import RNetModel, CNNModel, MNetModel
 
 ## Model Complexity
-from fvcore.nn import FlopCountAnalysis, flop_count_table
+from fvcore.nn.flop_count import FlopCountAnalysis
+from fvcore.nn.activation_count import ActivationCountAnalysis
 from torchsummary import summary
 #DLProf
 import torch.cuda.profiler as profiler
@@ -239,13 +240,19 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     model = MNetModel()
-    model = model.cuda()
     
-    flops = FlopCountAnalysis(model, torch.randn(16,3,224,224))
-    print(flop_count_table(flops))
+
+    # Create the FlopCountAnalysis and ActivationCountAnalysis objects
+    flop_analysis = FlopCountAnalysis(model, torch.randn(1, 3, 224, 224))
+    activation_analysis = ActivationCountAnalysis(model, torch.randn(1, 3, 224, 224))
+
+    flops_breakdown = flop_analysis.by_module()
+    for module_name, flops in flops_breakdown.items():
+        print(f"{module_name}: {flops:.2f} FLOPS")
+        
     print(summary(model,(3,224,224)))
 
-    
+    model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
