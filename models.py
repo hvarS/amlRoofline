@@ -19,7 +19,20 @@ class CNNModel(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.classifier = nn.Linear(512, num_classes)
 
-    def forward(self, x, profiler):
+    def forward(self, x):
+
+
+        upsample1 = self.max_pool1(self.relu1(self.bn1(self.conv1(x))))
+        upsample2 = self.relu2(self.bn2(self.conv2(upsample1)))
+        upsample3 = self.relu3(self.bn3(self.conv3(upsample2)))
+        upsample4 = self.relu4(self.bn4(self.conv4(upsample3)))
+        x = self.avgpool(upsample4)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+
+        return x
+
+    def forward_with_profiler(self, x, profiler):
 
         profiler.start()
 
@@ -32,7 +45,7 @@ class CNNModel(nn.Module):
         x = self.classifier(x)
 
         profiler.stop()
-        
+
         return x
     
 
@@ -64,7 +77,24 @@ class RNetModel(nn.Module):
             layers.append(nn.ReLU(inplace=True))
         return nn.Sequential(*layers)
 
-    def forward(self, x, profiler):
+    def forward(self, x):
+        x = self.conv1(x)
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.maxpool(x)
+
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        x = self.layer4(x)
+
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.fc(x)
+
+        return x
+
+    def forward_with_profiler(self, x, profiler):
         profiler.start()
 
         x = self.conv1(x)
@@ -112,7 +142,14 @@ class MNetModel(nn.Module):
             nn.ReLU(inplace=True)
         )
 
-    def forward(self, x, profiler):
+    def forward(self, x):
+        x = self.features(x)
+        x = self.avgpool(x)
+        x = x.view(x.size(0), -1)
+        x = self.classifier(x)
+        return x
+
+    def forward_with_profiler(self, x, profiler):
         
         profiler.start()
 
