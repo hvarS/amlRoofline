@@ -143,7 +143,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         #     with_flops=True, 
         #     with_modules=True,
         # ) as p:
-        with torch.autograd.profiler.profile(enabled=True, use_cuda=True) as p:
+        with torch.autograd.profiler.profile(enabled=True, use_cuda=False) as p:
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
@@ -166,7 +166,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if args.dry_run:
                 break
     
-    print(p)
+    print(p.key_averages(group_by_stack_n=3))
         
 
         
