@@ -13,7 +13,8 @@ from models import RNetModel, CNNModel, MNetModel
 #DLProf
 import torch.cuda.profiler as profiler
 import nvidia_dlprof_pytorch_nvtx
-nvidia_dlprof_pytorch_nvtx.init()
+
+nvidia_dlprof_pytorch_nvtx.init(stack_trace = True)
 
 
 class Summary(Enum):
