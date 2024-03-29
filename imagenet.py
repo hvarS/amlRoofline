@@ -239,11 +239,13 @@ def main():
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
     model = MNetModel()
+    model = model.cuda()
+    
     flops = FlopCountAnalysis(model, torch.randn(16,3,224,224))
     print(flop_count_table(flops))
     print(summary(model,(3,224,224)))
 
-    model = model.cuda()
+    
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
