@@ -240,7 +240,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = RNetModel()
+    model = CNNModel()
     
 
     # Create the FlopCountAnalysis and ActivationCountAnalysis objects
