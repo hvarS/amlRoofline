@@ -38,21 +38,6 @@ class CNNModel(nn.Module):
 
         return x
 
-    def forward_with_profiler(self, x, profiler):
-
-        profiler.start()
-
-        upsample1 = self.max_pool1(self.relu1(self.bn1(self.conv1(x))))
-        upsample2 = self.relu2(self.bn2(self.conv2(upsample1)))
-        upsample3 = self.relu3(self.bn3(self.conv3(upsample2)))
-        upsample4 = self.relu4(self.bn4(self.conv4(upsample3)))
-        x = self.avgpool(upsample4)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-
-        profiler.stop()
-
-        return x
     
 
 class RNetModel(nn.Module):
@@ -100,26 +85,6 @@ class RNetModel(nn.Module):
 
         return x
 
-    def forward_with_profiler(self, x, profiler):
-        profiler.start()
-
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
-
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.fc(x)
-
-        profiler.stop()
-
-        return x
     
 
 class MNetModel(nn.Module):
@@ -153,17 +118,4 @@ class MNetModel(nn.Module):
         x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
-        return x
-
-    def forward_with_profiler(self, x, profiler):
-        
-        profiler.start()
-
-        x = self.features(x)
-        x = self.avgpool(x)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
-
-        profiler.stop()
-
         return x
