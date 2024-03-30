@@ -149,6 +149,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
                 break
     
     print(p.key_averages(group_by_stack_n=3))
+    p.export_chrome_trace("trace.json")
         
 
 def test(model, device, test_loader):
