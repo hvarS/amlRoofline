@@ -119,8 +119,6 @@ def train(args, model, device, train_loader, optimizer, epoch):
         len(train_loader),
         [losses, top1, top5],
         prefix="Epoch: [{}]".format(epoch))
-
-
     model.train()
     
     for batch_idx, (data, target) in enumerate(train_loader):
