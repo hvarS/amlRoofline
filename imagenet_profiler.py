@@ -125,7 +125,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-        with torch.autograd.profiler.profile(enabled=True, use_cuda=False) as p:
+        with torch.autograd.profiler.profile(enabled=True, use_cuda=True, with_flops=True, with_stack=True) as p:
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
@@ -170,8 +170,7 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
-
+    
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
