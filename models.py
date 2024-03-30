@@ -1,4 +1,5 @@
 import torch.nn as nn
+import torch.autograd.profiler as profiler
 
 class CNNModel(nn.Module):
     def __init__(self, num_classes=10):
@@ -21,14 +22,19 @@ class CNNModel(nn.Module):
 
     def forward(self, x):
 
-
-        upsample1 = self.max_pool1(self.relu1(self.bn1(self.conv1(x))))
-        upsample2 = self.relu2(self.bn2(self.conv2(upsample1)))
-        upsample3 = self.relu3(self.bn3(self.conv3(upsample2)))
-        upsample4 = self.relu4(self.bn4(self.conv4(upsample3)))
-        x = self.avgpool(upsample4)
-        x = x.view(x.size(0), -1)
-        x = self.classifier(x)
+        with profiler.record_function("CONV-BLOCK1"):
+            upsample1 = self.max_pool1(self.relu1(self.bn1(self.conv1(x))))
+        with profiler.record_function("CONV-BLOCK2"):
+            upsample2 = self.relu2(self.bn2(self.conv2(upsample1)))
+        with profiler.record_function("CONV-BLOCK3"):
+            upsample3 = self.relu3(self.bn3(self.conv3(upsample2)))
+        with profiler.record_function("CONV-BLOCK4"):
+            upsample4 = self.relu4(self.bn4(self.conv4(upsample3)))
+        with profiler.record_function("POOLING(AVERAGE)"):
+            x = self.avgpool(upsample4)
+        with profiler.record_function("CLASSIFIER (LINEAR)"):
+            x = x.view(x.size(0), -1)
+            x = self.classifier(x)
 
         return x
 
