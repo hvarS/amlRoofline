@@ -17,7 +17,7 @@ from fvcore.nn import flop_count_table
 from fvcore.nn.activation_count import ActivationCountAnalysis
 from torchsummary import summary
 #DLProf
-import torch.profiler as profiler
+import torch.profiler as profiler, ProfilerActivity
 # import nvidia_dlprof_pytorch_nvtx
 # nvidia_dlprof_pytorch_nvtx.init()
 
@@ -123,10 +123,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
     
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-        with torch.profiler.profile(on_trace_ready=torch.profiler.tensorboard_trace_handler('./log/cnn_t4'),
-                                    profile_memory=True, 
-                                    record_shapes=True,
-                                    with_flops=True) as p:
+        with torch.profiler.profile(
+        activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
+        on_trace_ready=torch.profiler.tensorboard_trace_handler('./log/cnn_t4'),
+        profile_memory=True, 
+        record_shapes=True,
+        with_flops=True) as p:
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
