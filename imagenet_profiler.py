@@ -123,7 +123,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-        with torch.profiler.profile(enabled=True, profile_memory=True, use_cuda=True, with_flops=True, with_stack=True) as p:
+        with torch.autograd.profiler.profile(enabled=True, profile_memory=True, use_cuda=True, with_flops=True, with_stack=True) as p:
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
