@@ -10,11 +10,16 @@ import random
 import os
 from enum import Enum
 from models import RNetModel, CNNModel, MNetModel
+
+## Model Complexity
+from fvcore.nn.flop_count import FlopCountAnalysis
+from fvcore.nn import flop_count_table
+from fvcore.nn.activation_count import ActivationCountAnalysis
+from torchsummary import summary
 #DLProf
 import torch.cuda.profiler as profiler
-import nvidia_dlprof_pytorch_nvtx
-
-nvidia_dlprof_pytorch_nvtx.init(enable_function_stack=True)
+# import nvidia_dlprof_pytorch_nvtx
+# nvidia_dlprof_pytorch_nvtx.init()
 
 
 class Summary(Enum):
@@ -101,7 +106,6 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
 
-
 def train(args, model, device, train_loader, optimizer, epoch):
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -140,7 +144,6 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
 
 
-
 def test(model, device, test_loader):
     model.eval()
     test_loss = 0
@@ -165,7 +168,7 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('data', metavar='DIR', nargs='?', default='imagenet',
                     help='path to dataset (default: imagenet)')
-    parser.add_argument('--batch-size', type=int, default=128, metavar='N',
+    parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
@@ -235,7 +238,19 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = RNetModel()
+    model = MNetModel()
+    
+
+    # Create the FlopCountAnalysis and ActivationCountAnalysis objects
+    sample = torch.randn(1, 3, 224, 224)
+    print(flop_count_table(FlopCountAnalysis(model, sample)))
+    summary(model, (3,224,224), device='cpu')
+
+    activation_analysis = ActivationCountAnalysis(model, sample)
+    print(activation_analysis)
+    total_activations = activation_analysis.total()
+    print(f"Total Activations: {total_activations:.2f}")
+
     model = model.cuda()
     optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 

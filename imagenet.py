@@ -17,10 +17,14 @@ from fvcore.nn import flop_count_table
 from fvcore.nn.activation_count import ActivationCountAnalysis
 from torchsummary import summary
 #DLProf
-import torch.cuda.profiler as profiler
+import torch.profiler as profiler
 # import nvidia_dlprof_pytorch_nvtx
 # nvidia_dlprof_pytorch_nvtx.init()
 
+
+def trace_handler(prof):
+    print(prof.key_averages().table(
+        sort_by="self_cuda_time_total", row_limit=-1))
 
 class Summary(Enum):
     NONE = 0
@@ -115,21 +119,22 @@ def train(args, model, device, train_loader, optimizer, epoch):
         len(train_loader),
         [losses, top1, top5],
         prefix="Epoch: [{}]".format(epoch))
-
-
     model.train()
+    
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
-        optimizer.zero_grad()
-        if batch_idx == 3 and epoch >= 2:
-            output = model.forward_with_profiler(data, profiler)
-        else:
+        with torch.profiler.profile(
+        on_trace_ready=torch.profiler.tensorboard_trace_handler('./log/cnn_t4'),
+        profile_memory=True, 
+        record_shapes=True,
+        with_flops=True) as p:
+            optimizer.zero_grad()
             output = model(data)
-        loss = F.cross_entropy(output, target)
-        loss.backward()
-        optimizer.step()
-        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+            loss = F.cross_entropy(output, target)
+            loss.backward()
+            optimizer.step()
         losses.update(loss.item(), data.size(0))
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
         top1.update(acc1[0], data.size(0))
         top5.update(acc5[0], data.size(0))
 
@@ -141,8 +146,9 @@ def train(args, model, device, train_loader, optimizer, epoch):
 
             if args.dry_run:
                 break
-
-
+    
+    print(p.key_averages(group_by_stack_n=3))
+        
 
 def test(model, device, test_loader):
     model.eval()
@@ -161,8 +167,7 @@ def test(model, device, test_loader):
     print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
         test_loss, correct, len(test_loader.dataset),
         100. * correct / len(test_loader.dataset)))
-
-
+    
 def main():
     # Training settings
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
@@ -238,7 +243,7 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = MNetModel()
+    model = CNNModel()
     
 
     # Create the FlopCountAnalysis and ActivationCountAnalysis objects
@@ -256,10 +261,9 @@ def main():
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        with torch.autograd.profiler.emit_nvtx(): #added this line for DLProf
-            train(args, model, device, train_loader, optimizer, epoch)
-            test(model, device, test_loader)
-            scheduler.step()
+        train(args, model, device, train_loader, optimizer, epoch)
+        test(model, device, test_loader)
+        scheduler.step()
 
 
 if __name__ == '__main__':
