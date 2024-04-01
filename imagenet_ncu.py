@@ -121,7 +121,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
-        if batch_idx == 3 and epoch >= 2:
+        if batch_idx == 3 and epoch == 2:
             profiler.start()
             output = model(data)
             loss = F.cross_entropy(output, target)
@@ -168,6 +168,8 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('data', metavar='DIR', nargs='?', default='imagenet',
                     help='path to dataset (default: imagenet)')
+    parser.add_argument('--m', metavar='model', nargs='?', default='mnet',
+                help='define which model to run (mnet, rnet, cnn)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
@@ -238,7 +240,12 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = MNetModel()
+    if args.m == 'cnn':
+        model = CNNModel()
+    elif args.m == 'rnet':
+        model = RNetModel()
+    elif args.m == 'mnet':
+        model = MNetModel()
     
 
     # Create the FlopCountAnalysis and ActivationCountAnalysis objects
@@ -247,7 +254,6 @@ def main():
     summary(model, (3,224,224), device='cpu')
 
     activation_analysis = ActivationCountAnalysis(model, sample)
-    print(activation_analysis)
     total_activations = activation_analysis.total()
     print(f"Total Activations: {total_activations:.2f}")
 
@@ -256,7 +262,7 @@ def main():
 
     scheduler = StepLR(optimizer, step_size=1, gamma=args.gamma)
     for epoch in range(1, args.epochs + 1):
-        with torch.autograd.profiler.emit_nvtx(): #added this line for DLProf
+        with torch.autograd.profiler.emit_nvtx():
             train(args, model, device, train_loader, optimizer, epoch)
             test(model, device, test_loader)
             scheduler.step()
