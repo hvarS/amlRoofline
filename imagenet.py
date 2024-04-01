@@ -151,7 +151,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if args.dry_run:
                 break
     if(epoch == int(args.epochs) - 1):
-        print(p.key_averages().table(sort_by="cpu_time_total"))
+        print(p.key_averages(group_by_stack_n=1).table(sort_by="cpu_time_total"))
     
         
 
