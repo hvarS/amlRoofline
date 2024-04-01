@@ -243,8 +243,12 @@ def main():
     train_loader = torch.utils.data.DataLoader(dataset1,**train_kwargs)
     test_loader = torch.utils.data.DataLoader(dataset2, **test_kwargs)
 
-    model = CNNModel()
-    
+    if args.m == 'cnn':
+        model = CNNModel()
+    elif args.m == 'rnet':
+        model = RNetModel()
+    elif args.m == 'mnet':
+        model = MNetModel()
 
     # Create the FlopCountAnalysis and ActivationCountAnalysis objects
     sample = torch.randn(1, 3, 224, 224)
