@@ -124,10 +124,8 @@ def train(args, model, device, train_loader, optimizer, epoch):
         with torch.profiler.profile(
         activities= [torch.profiler.ProfilerActivity.CPU],
         schedule=torch.profiler.schedule(
-            wait=1,
             warmup=1,
-            active=2,
-            repeat=1),
+            active=2),
         on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()}'),
         profile_memory=True, 
         record_shapes=True,
