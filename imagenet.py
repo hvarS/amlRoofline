@@ -127,6 +127,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             wait = 0,
             warmup=1,
             active=4),
+        record_shapes=True,
         with_stack = True,
         on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()}'),
         profile_memory=True, 
