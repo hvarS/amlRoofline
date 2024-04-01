@@ -122,8 +122,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
     for batch_idx, (data, target) in enumerate(train_loader):
         data, target = data.to(device), target.to(device)
         with torch.profiler.profile(
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()
-}'),
+        on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()}'),
         profile_memory=True, 
         record_shapes=True,
         with_flops=True) as p:
