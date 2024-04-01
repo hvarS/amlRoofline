@@ -128,11 +128,13 @@ def train(args, model, device, train_loader, optimizer, epoch):
         on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()}'),
         profile_memory=True, 
         with_flops=True) as p:
+            p.start()
             optimizer.zero_grad()
             output = model(data)
             loss = F.cross_entropy(output, target)
             loss.backward()
             optimizer.step()
+            p.step()
         losses.update(loss.item(), data.size(0))
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         top1.update(acc1[0], data.size(0))
