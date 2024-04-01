@@ -18,8 +18,6 @@ from fvcore.nn.activation_count import ActivationCountAnalysis
 from torchsummary import summary
 #DLProf
 import torch.profiler as profiler
-# import nvidia_dlprof_pytorch_nvtx
-# nvidia_dlprof_pytorch_nvtx.init()
 
 
 def trace_handler(prof):
@@ -173,6 +171,8 @@ def main():
     parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
     parser.add_argument('data', metavar='DIR', nargs='?', default='imagenet',
                     help='path to dataset (default: imagenet)')
+    parser.add_argument('--m', metavar='model', nargs='?', default='mnet',
+                    help='define which model to run (mnet, rnet, cnn)')
     parser.add_argument('--batch-size', type=int, default=64, metavar='N',
                         help='input batch size for training (default: 64)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
