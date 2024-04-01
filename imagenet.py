@@ -124,8 +124,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         with torch.profiler.profile(
         activities= [torch.profiler.ProfilerActivity.CPU],
         record_shapes=True,
-        with_stack = True,
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()}'),
+        on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{''.join((torch.cuda.get_device_name()).split(' '))}'),
         profile_memory=True, 
         with_flops=True) as p:
             optimizer.zero_grad()
