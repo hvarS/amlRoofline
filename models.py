@@ -22,17 +22,17 @@ class CNNModel(nn.Module):
 
     def forward(self, x):
 
-        with profiler.record_function("CONV-BLOCK1"):
+        with profiler.record_function("CNN-CONV-BLOCK1"):
             upsample1 = self.max_pool1(self.relu1(self.bn1(self.conv1(x))))
-        with profiler.record_function("CONV-BLOCK2"):
+        with profiler.record_function("CNN-CONV-BLOCK2"):
             upsample2 = self.relu2(self.bn2(self.conv2(upsample1)))
-        with profiler.record_function("CONV-BLOCK3"):
+        with profiler.record_function("CNN-CONV-BLOCK3"):
             upsample3 = self.relu3(self.bn3(self.conv3(upsample2)))
-        with profiler.record_function("CONV-BLOCK4"):
+        with profiler.record_function("CNN-CONV-BLOCK4"):
             upsample4 = self.relu4(self.bn4(self.conv4(upsample3)))
-        with profiler.record_function("POOLING(AVERAGE)"):
+        with profiler.record_function("CNN-POOLING(AVERAGE)"):
             x = self.avgpool(upsample4)
-        with profiler.record_function("CLASSIFIER (LINEAR)"):
+        with profiler.record_function("CNN-CLASSIFIER (LINEAR)"):
             x = x.view(x.size(0), -1)
             x = self.classifier(x)
 
@@ -58,7 +58,6 @@ class RNetModel(nn.Module):
 
     def _make_layer(self, in_channels, out_channels, blocks, stride=1):
         layers = []
-
         layers.append(nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False))
         layers.append(nn.BatchNorm2d(out_channels))
         layers.append(nn.ReLU(inplace=True))
@@ -69,19 +68,25 @@ class RNetModel(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        x = self.conv1(x)
-        x = self.bn1(x)
-        x = self.relu(x)
-        x = self.maxpool(x)
+        with profiler.record_function("RNet-CONV-BLOCK1"):
+            x = self.conv1(x)
+            x = self.bn1(x)
+            x = self.relu(x)
+            x = self.maxpool(x)
 
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        x = self.layer4(x)
-
-        x = self.avgpool(x)
+        with profiler.record_function("RNet-CONV-BLOCK2"):
+            x = self.layer1(x)
+        with profiler.record_function("RNet-CONV-BLOCK3"):
+            x = self.layer2(x)
+        with profiler.record_function("RNet-CONV-BLOCK4"):
+            x = self.layer3(x)
+        with profiler.record_function("RNet-CONV-BLOCK5"):
+            x = self.layer4(x)
+        with profiler.record_function("RNet-POOLING(AVERAGE)"):
+            x = self.avgpool(x)
         x = x.view(x.size(0), -1)
-        x = self.fc(x)
+        with profiler.record_function("RNet-CLASSIFIER(LINEAR)"):
+            x = self.fc(x)
 
         return x
 
@@ -114,8 +119,12 @@ class MNetModel(nn.Module):
         )
 
     def forward(self, x):
-        x = self.features(x)
-        x = self.avgpool(x)
+        with profiler.record_function("MNET-CNN-BLOCK"):
+            x = self.features(x)
+        with profiler.record_function("MNET-POOLING(AVERAGE)"):
+            x = self.avgpool(x)
+        
         x = x.view(x.size(0), -1)
-        x = self.classifier(x)
+        with profiler.record_function("MNET-CLASSIFIER(LINEAR)"):
+            x = self.classifier(x)
         return x
