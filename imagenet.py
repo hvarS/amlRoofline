@@ -151,7 +151,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if args.dry_run:
                 break
     
-    print(p)
+    print(p.key_averages())
         
 
 def test(model, device, test_loader):
@@ -262,7 +262,6 @@ def main():
     summary(model, (3,224,224), device='cpu')
 
     activation_analysis = ActivationCountAnalysis(model, sample)
-    print(activation_analysis)
     total_activations = activation_analysis.total()
     print(f"Total Activations: {total_activations:.2f}")
 
