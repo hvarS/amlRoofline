@@ -123,7 +123,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
         data, target = data.to(device), target.to(device)
         gpu_name = ''.join((torch.cuda.get_device_name()).split(' '))
         with torch.profiler.profile(
-        activities= [torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.GPU],
+        activities= [torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
         record_shapes=True,
         on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{gpu_name}'),
         profile_memory=True, 
