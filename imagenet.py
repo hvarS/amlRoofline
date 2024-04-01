@@ -127,6 +127,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             wait = 0,
             warmup=1,
             active=2),
+        with_stack = True,
         on_trace_ready=torch.profiler.tensorboard_trace_handler(f'./log/{args.m}_{torch.cuda.get_device_name()}'),
         profile_memory=True, 
         record_shapes=True,
@@ -150,7 +151,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if args.dry_run:
                 break
     
-    print(p.key_averages())
+    print(p.key_averages(group_by_stack_n=1))
         
 
 def test(model, device, test_loader):
