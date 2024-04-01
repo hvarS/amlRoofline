@@ -151,7 +151,7 @@ def train(args, model, device, train_loader, optimizer, epoch):
             if args.dry_run:
                 break
     
-    print(p.key_averages(group_by_stack_n=1))
+    print(p.key_averages().table())
         
 
 def test(model, device, test_loader):
