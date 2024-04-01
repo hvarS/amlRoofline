@@ -122,12 +122,12 @@ def train(args, model, device, train_loader, optimizer, epoch):
         data, target = data.to(device), target.to(device)
         optimizer.zero_grad()
         if batch_idx == 3 and epoch >= 2:
-            output = model.forward_with_profiler(data, profiler)
-        else:
+            profiler.start()
             output = model(data)
-        loss = F.cross_entropy(output, target)
-        loss.backward()
-        optimizer.step()
+            loss = F.cross_entropy(output, target)
+            loss.backward()
+            optimizer.step()
+            profiler.stop()
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), data.size(0))
         top1.update(acc1[0], data.size(0))
