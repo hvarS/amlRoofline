@@ -123,10 +123,11 @@ def train(args, model, device, train_loader, optimizer, epoch):
         optimizer.zero_grad()
         if batch_idx == 3 and epoch == 2:
             profiler.start()
-            output = model(data)
-            loss = F.cross_entropy(output, target)
-            loss.backward()
-            optimizer.step()
+        output = model(data)
+        loss = F.cross_entropy(output, target)
+        loss.backward()
+        optimizer.step()
+        if batch_idx == 3 and epoch == 2:
             profiler.stop()
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
         losses.update(loss.item(), data.size(0))
